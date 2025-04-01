@@ -28,6 +28,27 @@ eraser = pygame.transform.scale(eraser, (eraser.get_width()//15, eraser.get_heig
 eraser_rect = eraser.get_rect(center=(700, 70))
 eraser2 = pygame.transform.scale(eraser, (eraser.get_width()//1.5, eraser.get_height()//1.5))
 
+def draw_square(screen, start_pos, end_pos, current_color):
+    x1, y1 = start_pos
+    x2, y2 = end_pos
+
+    side_length = min(abs(x2 - x1), abs(y2 - y1))
+
+    x2 = x1 + side_length if x2 > x1 else x1 - side_length
+    y2 = y1 + side_length if y2 > y1 else y1 - side_length
+
+    rect = pygame.Rect(min(x1, x2), min(y1, y2), side_length, side_length)
+    pygame.draw.rect(screen, current_color, rect)
+    
+def draw_circle(screen, start_pos, end_pos, current_color):
+    x1, y1 = start_pos
+    x2, y2 = end_pos
+
+    center = ((x1 + x2) // 2, (y1 + y2) // 2)
+    radius = int(min(abs(x2 - x1), abs(y2 - y1)) / 2)
+
+    pygame.draw.circle(screen, current_color, center, radius)
+
 def draw_isosceles_triangle(screen, start_pos, end_pos, current_color):
     x2, y2 = max(start_pos[0], end_pos[0]), max(start_pos[1], end_pos[1])
     x1, y1 = min(start_pos[0], end_pos[0]), min(start_pos[1], end_pos[1])
@@ -161,11 +182,9 @@ while True:
             rect = pygame.Rect(x1, y1, x2 - x1, y2 - y1)
             rect.normalize()
             if fig_type == "rect":
-                pygame.draw.rect(sc, color, rect)
+                draw_square(sc, sp, ep, color)
             elif fig_type == "circle":
-                center = rect.center
-                radius = int(min(rect.width, rect.height) / 2)
-                pygame.draw.circle(sc, color, center, radius)
+                draw_circle(sc, sp, ep, color)
             elif fig_type == "triangle":
                 draw_isosceles_triangle(sc, sp, ep, color)
             elif fig_type == "parallelogram":
@@ -176,11 +195,9 @@ while True:
         rect = pygame.Rect(*sp, ep[0] - sp[0], ep[1] - sp[1])
         rect.normalize()
         if fig_type == "rect":
-            pygame.draw.rect(sc, color, rect, 2)
+            draw_square(sc, sp, ep, color)
         elif fig_type == "circle":
-            center = rect.center
-            radius = int(min(rect.width, rect.height) / 2)
-            pygame.draw.circle(sc, color, center, radius, 2)
+            draw_circle(sc, sp, ep, color)
         elif fig_type == "triangle":
             draw_isosceles_triangle(sc, sp, ep, color)
         elif fig_type == "parallelogram":
@@ -203,15 +220,21 @@ while True:
                     fig_type, sp, ep, color = item
                     rect = pygame.Rect(*sp, ep[0] - sp[0], ep[1] - sp[1])
                     rect.normalize()
-                    if fig_type == "rect":
-                        if not rect.collidepoint(mx, my):
-                            new_drawed.append(item)
+                    if fig_type == "square":
+                        side_length = min(abs(ep[0] - sp[0]), abs(ep[1] - sp[1]))
+                        rect = pygame.Rect(sp[0], sp[1], side_length, side_length)
+                        rect.normalize()
+                        if rect.collidepoint(mx, my):
+                            continue
+                        new_drawed.append(item)
                     elif fig_type == "circle":
-                        center = rect.center
-                        radius = int(min(rect.width, rect.height) / 2)
+                        x1, y1 = sp
+                        x2, y2 = ep
+                        center = ((x1 + x2) // 2, (y1 + y2) // 2)
+                        radius = int(min(abs(x2 - x1), abs(y2 - y1)) / 2)
                         dx = mx - center[0]
                         dy = my - center[1]
-                        if dx**2 + dy**2 > radius**2:
+                        if dx**2 + dy**2 > radius**2:  # Если точка вне круга, сохраняем
                             new_drawed.append(item)
                     elif fig_type == "triangle":
                         top_vertex = sp
